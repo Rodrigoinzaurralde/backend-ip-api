@@ -13,7 +13,9 @@ def home():
 
 @app.route("/mi-ip")
 def mi_ip():
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    xff = request.headers.get('X-Forwarded-For', '')
+    ip = xff.split(',')[0] if xff else request.remote_addr
+
     url = f"http://ip-api.com/json/{ip}?fields=61439"
     try:
         r = requests.get(url, timeout=5)
