@@ -5,7 +5,7 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})  # <--- Aquí
 
 @app.route("/")
 def home():
