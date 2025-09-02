@@ -5,11 +5,11 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # <--- Aquí
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 @app.route("/")
 def home():
-    return "API Flask corriendo en Render ✅"
+    return jsonify({"message": "API Flask corriendo en Render ✅"})
 
 @app.route("/mi-ip")
 def mi_ip():
