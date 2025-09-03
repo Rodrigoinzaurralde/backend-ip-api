@@ -11,10 +11,24 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 def home():
     return jsonify({"message": "API Flask corriendo en Render ✅"})
 
+def obtener_ip_publica():
+    """Obtiene la IP pública real de la máquina"""
+    try:
+        r = requests.get("https://api.ipify.org?format=json", timeout=5)
+        ip = r.json().get("ip")
+        return ip
+    except Exception:
+        return None
+
 @app.route("/mi-ip")
 def mi_ip():
     xff = request.headers.get('X-Forwarded-For', '')
     ip = xff.split(',')[0] if xff else request.remote_addr
+
+    if ip.startswith("127.") or ip.startswith("10.") or ip.startswith("192.168."):
+        ip_publica = obtener_ip_publica()
+        if ip_publica:
+            ip = ip_publica
 
     url = f"http://ip-api.com/json/{ip}?fields=61439"
     try:
