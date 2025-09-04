@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import requests
 import os
@@ -7,28 +7,20 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+# 🔑 Clave secreta (mejor usar variable de entorno en Replit o Render)
+API_SECRET = os.environ.get("API_SECRET", "1234")
+
 @app.route("/")
 def home():
-    return jsonify({"message": "API Flask corriendo en Render ✅"})
-
-def obtener_ip_publica():
-    """Obtiene la IP pública real de la máquina"""
-    try:
-        r = requests.get("https://api.ipify.org?format=json", timeout=5)
-        ip = r.json().get("ip")
-        return ip
-    except Exception:
-        return None
+    return jsonify({"message": "API Flask corriendo ✅"})
 
 @app.route("/mi-ip")
 def mi_ip():
+    """
+    Devuelve la información de IP del usuario usando ip-api.com
+    """
     xff = request.headers.get('X-Forwarded-For', '')
     ip = xff.split(',')[0] if xff else request.remote_addr
-
-    if ip.startswith("127.") or ip.startswith("10.") or ip.startswith("192.168."):
-        ip_publica = obtener_ip_publica()
-        if ip_publica:
-            ip = ip_publica
 
     url = f"http://ip-api.com/json/{ip}?fields=61439"
     try:
@@ -37,6 +29,42 @@ def mi_ip():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/guardar-usuario", methods=["POST"])
+def guardar_usuario():
+    """
+    Guarda usuario, ciudad y país en usuarios.txt (requiere API key).
+    """
+    try:
+        api_key = request.headers.get("X-API-KEY")
+        if api_key != API_SECRET:
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        data = request.get_json()
+        usuario = data.get("usuario", "desconocido")
+        ciudad = data.get("ciudad", "sin_ciudad")
+        pais = data.get("pais", "sin_pais")
+
+        with open("usuarios.txt", "a", encoding="utf-8") as f:
+            f.write(f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais}\n")
+
+        return jsonify({"status": "ok", "message": "Usuario guardado"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/descargar-usuarios", methods=["GET"])
+def descargar_usuarios():
+    """
+    Devuelve el archivo usuarios.txt como descarga (requiere API key).
+    """
+    api_key = request.headers.get("X-API-KEY")
+    if api_key != API_SECRET:
+        return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+    try:
+        return send_file("usuarios.txt", as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"usuarios": "Archivo vacío o no creado aún"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
