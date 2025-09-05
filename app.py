@@ -3,30 +3,12 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import requests
 import os
-import time
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 API_SECRET = os.environ.get("API_SECRET", "1234")
-
-rate_limit = {}
-REDIRECT_URL = "https://rodrigoinzaurralde.github.io/eMercado/error.html"
-WAIT_SECONDS = 5
 USUARIOS_FILE = "usuarios.txt"
-
-@app.before_request
-def limit_remote_addr():
-    xff = request.headers.get('X-Forwarded-For', '')
-    ip = xff.split(',')[0] if xff else request.remote_addr
-    now = time.time()
-    last = rate_limit.get(ip, 0)
-    if now - last < 1:
-        return jsonify({
-            "redirect_url": REDIRECT_URL,
-            "wait_seconds": WAIT_SECONDS
-        }), 429
-    rate_limit[ip] = now
 
 
 @app.route("/")
@@ -49,31 +31,15 @@ def mi_ip():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/registrar-visita", methods=["POST"])
-def registrar_visita():
-    try:
-        data = request.get_json()
-        usuario = str(data.get("usuario", "desconocido"))[:50]
-        ciudad = str(data.get("ciudad", "sin_ciudad"))[:50]
-        pais = str(data.get("pais", "sin_pais"))[:50]
-
-        xff = request.headers.get('X-Forwarded-For', '')
-        ip = xff.split(',')[0] if xff else request.remote_addr
-
-        with open(USUARIOS_FILE, "a", encoding="utf-8") as f:
-            f.write(f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais} | IP: {ip}\n")
-
-        return jsonify({"status": "ok", "message": "Visita registrada", "ip": ip})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
 @app.route("/guardar-usuario", methods=["POST"])
 def guardar_usuario():
     try:
         api_key = request.headers.get("X-API-KEY")
         if api_key != API_SECRET:
-            return jsonify({"status": "error", "message": "No autorizado"}), 401
+            return jsonify({
+                "status": "error",
+                "message": "No autorizado"
+            }), 401
 
         data = request.get_json()
         usuario = data.get("usuario", "desconocido")
@@ -83,9 +49,15 @@ def guardar_usuario():
         ip = xff.split(',')[0] if xff else request.remote_addr
 
         with open(USUARIOS_FILE, "a", encoding="utf-8") as f:
-            f.write(f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais} | IP: {ip}\n")
+            f.write(
+                f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais} | IP: {ip}\n"
+            )
 
-        return jsonify({"status": "ok", "message": "Usuario guardado", "ip": ip})
+        return jsonify({
+            "status": "ok",
+            "message": "Usuario guardado",
+            "ip": ip
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -111,9 +83,15 @@ def borrar_usuarios():
     try:
         if os.path.exists(USUARIOS_FILE):
             os.remove(USUARIOS_FILE)
-            return jsonify({"status": "ok", "message": "Archivo usuarios.txt eliminado"})
+            return jsonify({
+                "status": "ok",
+                "message": "Archivo usuarios.txt eliminado"
+            })
         else:
-            return jsonify({"status": "ok", "message": "El archivo ya no existe"})
+            return jsonify({
+                "status": "ok",
+                "message": "El archivo ya no existe"
+            })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
