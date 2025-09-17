@@ -18,6 +18,9 @@ def home():
 
 @app.route("/mi-ip")
 def mi_ip():
+    """
+    Devuelve información de geolocalización según la IP del visitante.
+    """
     xff = request.headers.get('X-Forwarded-For', '')
     ip = xff.split(',')[0] if xff else request.remote_addr
 
@@ -34,23 +37,20 @@ def mi_ip():
 @app.route("/guardar-usuario", methods=["POST"])
 def guardar_usuario():
     try:
-        api_key = request.headers.get("X-API-KEY")
-        if api_key != API_SECRET:
-            return jsonify({
-                "status": "error",
-                "message": "No autorizado"
-            }), 401
-
         data = request.get_json()
         usuario = data.get("usuario", "desconocido")
         ciudad = data.get("ciudad", "sin_ciudad")
         pais = data.get("pais", "sin_pais")
+        lat = data.get("lat", "sin_lat")
+        long = data.get("long", "sin_long")
+
+        # Capturar IP real
         xff = request.headers.get('X-Forwarded-For', '')
         ip = xff.split(',')[0] if xff else request.remote_addr
 
         with open(USUARIOS_FILE, "a", encoding="utf-8") as f:
             f.write(
-                f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais} | IP: {ip}\n"
+                f"Usuario: {usuario} | Ciudad: {ciudad} | País: {pais} | IP: {ip} | Latitud: {lat} | Longitud : {long}\n"
             )
 
         return jsonify({
@@ -64,6 +64,9 @@ def guardar_usuario():
 
 @app.route("/descargar-usuarios", methods=["GET"])
 def descargar_usuarios():
+    """
+    Endpoint privado para descargar todos los usuarios guardados.
+    """
     api_key = request.headers.get("X-API-KEY")
     if api_key != API_SECRET:
         return jsonify({"status": "error", "message": "No autorizado"}), 401
@@ -76,6 +79,9 @@ def descargar_usuarios():
 
 @app.route("/borrar-usuarios", methods=["POST"])
 def borrar_usuarios():
+    """
+    Endpoint privado para borrar el archivo usuarios.txt
+    """
     api_key = request.headers.get("X-API-KEY")
     if api_key != API_SECRET:
         return jsonify({"status": "error", "message": "No autorizado"}), 401
