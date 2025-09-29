@@ -12,8 +12,8 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 API_SECRET = os.environ.get("API_SECRET", "1234")
 USUARIOS_FILE = "usuarios.txt"
 
-# URL de tu aplicación en Render (cámbiala por la tuya)
-APP_URL = os.environ.get("APP_URL", "https://tu-app.onrender.com")
+# URL de aplicacion en render 
+APP_URL = os.environ.get("APP_URL", "https://backend-ip-api.onrender.com/mi-ip")
 
 def keep_alive():
     """
